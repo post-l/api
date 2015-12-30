@@ -127,19 +127,19 @@ func (section *Section) parseIsiiSectionHeader(scanner *bufio.Scanner) (int, err
 	return 2, nil
 }
 
-// Merge merges a float of string section.
-func (section *Section) Merge(interval int) error {
+// Average creates a new data section with the average for a given interval.
+func (section *Section) Average(interval int) error {
 	if len(section.Data) == 0 {
 		return nil
 	}
 	if _, err := strconv.ParseFloat(section.Data[0].Value, 32); err == nil {
-		return section.MergeFloat(interval)
+		return section.AverageFloat(interval)
 	}
-	return section.MergeString(interval)
+	return section.AverageString(interval)
 }
 
-// MergeString merges string data section by taking the first element of each interval.
-func (section *Section) MergeString(interval int) error {
+// AverageString takes the first element of each interval.
+func (section *Section) AverageString(interval int) error {
 	newSize := (len(section.Data) / interval) + len(section.Data)%2
 	newData := make([]TimeValue, newSize)
 	curElem := 0
@@ -160,8 +160,8 @@ func (section *Section) MergeString(interval int) error {
 	return nil
 }
 
-// MergeFloat merges float data section. Average value of each interval.
-func (section *Section) MergeFloat(interval int) error {
+// AverageFloat averages float data section for each interval.
+func (section *Section) AverageFloat(interval int) error {
 	newSize := (len(section.Data) / interval) + len(section.Data)%2
 	newData := make([]TimeValue, newSize)
 	curElem := 0
@@ -179,7 +179,7 @@ func (section *Section) MergeFloat(interval int) error {
 		curElem++
 		if curElem == interval {
 			v := tValue / float32(curElem)
-			newData[i].Value = strconv.FormatFloat(float64(v), 'f', -1, 32)
+			newData[i].Value = strconv.FormatFloat(float64(v), 'f', 1, 32)
 			tValue = 0.0
 			curElem = 0
 			i++
@@ -187,7 +187,7 @@ func (section *Section) MergeFloat(interval int) error {
 	}
 	if curElem != 0 {
 		v := tValue / float32(curElem)
-		newData[i].Value = strconv.FormatFloat(float64(v), 'f', -1, 32)
+		newData[i].Value = strconv.FormatFloat(float64(v), 'f', 1, 32)
 	}
 	section.Data = newData
 	section.SampleCount = newSize
@@ -214,26 +214,24 @@ func (sections Sections) Write(w io.Writer) {
 
 // WriteStd writes the sections on the writer (Econmic format).
 func (sections Sections) WriteStd(w io.Writer, filename string) {
-	fmt.Fprintln(w, filename)
-	fmt.Fprintln(w, "yyyy-mm-dd")
-	fmt.Fprintln(w, "hh:mm")
+	fmt.Fprintf(w, "%s\r\nyyyy-mm-dd\r\nhh:mm\r\n", filename)
 	for _, section := range sections {
-		fmt.Fprintf(w, "%s;826409204;%s\n", section.Group, section.Setting)
+		fmt.Fprintf(w, "%s;000000000;%s\r\n", section.Group, section.Setting)
 	}
-	fmt.Fprintln(w, "")
+	fmt.Fprint(w, "\r\n")
 	for i, data := range sections[0].Data {
 		fmt.Fprint(w, data.Time.Format(isiiTimeLayout))
 		for _, section := range sections {
 			fmt.Fprintf(w, ";%s", section.Data[i].Value)
 		}
-		fmt.Fprintln(w, "")
+		fmt.Fprint(w, "\r\n")
 	}
 }
 
-// Merge merges all the sections. See Merge section for more details.
-func (sections Sections) Merge(interval int) error {
+// Average calculates the average of all the sections. See Average section for more details.
+func (sections Sections) Average(interval int) error {
 	for _, section := range sections {
-		if err := section.Merge(interval); err != nil {
+		if err := section.Average(interval); err != nil {
 			return err
 		}
 	}

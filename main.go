@@ -10,11 +10,11 @@ import (
 
 func main() {
 	m := martini.Classic()
-	m.Post("/hn/isii/merge", hnMergeIsiiFile)
+	m.Post("/hn/isii/average", hnIsiiFileAverage)
 	m.Run()
 }
 
-func hnMergeIsiiFile(w http.ResponseWriter, r *http.Request) {
+func hnIsiiFileAverage(w http.ResponseWriter, r *http.Request) {
 	interval, err := strconv.Atoi(r.FormValue("interval"))
 	if interval <= 1 {
 		renderJSON(w, http.StatusBadRequest, Error{"Bad parameter interval"})
@@ -31,10 +31,10 @@ func hnMergeIsiiFile(w http.ResponseWriter, r *http.Request) {
 		renderJSON(w, http.StatusBadRequest, Error{err.Error()})
 		return
 	}
-	if err := sections.Merge(interval); err != nil {
+	if err := sections.Average(interval); err != nil {
 		renderJSON(w, http.StatusBadRequest, Error{err.Error()})
 		return
 	}
-	w.Header().Set("Content-Disposition", "attachment")
+	w.Header().Set("Content-Disposition", "attachment; filename=average.txt")
 	sections.WriteStd(w, fHeader.Filename)
 }
