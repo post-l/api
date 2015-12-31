@@ -15,17 +15,21 @@ const (
 	prefixGroup       = "Group      : "
 	prefixSampleCount = "SampleCount: "
 
-	timeLayout     = "02-01-2006 15:04:05"
-	isiiTimeLayout = "2006-01-02;15:04"
+	timeLayout         = "02-01-2006 15:04:05"
+	economicTimeLayout = "2006-01-02;15:04"
+
+	economicSep = ";"
 )
 
 var (
-	errInvalidTimeValue   = errors.New("Can't parse time value line")
-	errInvalidTime        = errors.New("Invalid time")
-	errInvalidSetting     = errors.New("Invalid setting")
-	errInvalidGroup       = errors.New("Invalid group")
-	errInvalidSampleCount = errors.New("Invalid sample count")
-	errNoContent          = errors.New("No content")
+	errInvalidTimeValue     = errors.New("Can't parse time value line")
+	errInvalidTime          = errors.New("Invalid time")
+	errInvalidSetting       = errors.New("Invalid setting")
+	errInvalidGroup         = errors.New("Invalid group")
+	errInvalidSampleCount   = errors.New("Invalid sample count")
+	errNoContent            = errors.New("No content")
+	errInvalidSectionHeader = errors.New("Invalid section header")
+	errInvalidSectionData   = errors.New("Invalid section data")
 )
 
 // Sections is a slice of section with some useful methods.
@@ -43,6 +47,36 @@ type Section struct {
 type TimeValue struct {
 	Time  time.Time
 	Value string
+}
+
+// ParseEconomicFile parses an economic file to get the sections.
+func ParseEconomicFile(reader io.Reader) (Sections, error) {
+	scanner := bufio.NewScanner(reader)
+	for i := 0; i < 3; i++ {
+		if !scanner.Scan() {
+			return nil, errNoContent
+		}
+	}
+	var sections Sections
+	for scanner.Scan() {
+		if len(scanner.Bytes()) == 0 {
+			break
+		}
+		line := scanner.Text()
+		row := strings.Split(line, economicSep)
+		if len(row) != 3 {
+			return nil, errInvalidSectionHeader
+		}
+		sections = append(sections, &Section{
+			Setting: row[2],
+			Group:   row[0],
+		})
+	}
+	if len(sections) == 0 {
+		return nil, errNoContent
+	}
+	err := sections.parseEconomicData(scanner)
+	return sections, err
 }
 
 // ParseIsiiFile parses an isii file to get the sections.
@@ -194,8 +228,8 @@ func (section *Section) AverageFloat(interval int) error {
 	return nil
 }
 
-// Write writes the section on the writer (Isii format).
-func (section *Section) Write(w io.Writer) {
+// WriteIsii writes the section on the writer (Isii format).
+func (section *Section) WriteIsii(w io.Writer) {
 	fmt.Fprintln(w, prefixSetting, section.Setting)
 	fmt.Fprintln(w, prefixGroup, section.Group)
 	fmt.Fprintln(w, prefixSampleCount, section.SampleCount)
@@ -205,22 +239,22 @@ func (section *Section) Write(w io.Writer) {
 	fmt.Fprintln(w)
 }
 
-// Write writes the sections on the writer (Isii format).
-func (sections Sections) Write(w io.Writer) {
+// WriteIsii writes the sections on the writer (Isii format).
+func (sections Sections) WriteIsii(w io.Writer) {
 	for _, section := range sections {
-		section.Write(w)
+		section.WriteIsii(w)
 	}
 }
 
-// WriteStd writes the sections on the writer (Econmic format).
-func (sections Sections) WriteStd(w io.Writer, filename string) {
+// WriteEconomic writes the sections on the writer (Econmic format).
+func (sections Sections) WriteEconomic(w io.Writer, filename string) {
 	fmt.Fprintf(w, "%s\r\nyyyy-mm-dd\r\nhh:mm\r\n", filename)
 	for _, section := range sections {
 		fmt.Fprintf(w, "%s;000000000;%s\r\n", section.Group, section.Setting)
 	}
 	fmt.Fprint(w, "\r\n")
 	for i, data := range sections[0].Data {
-		fmt.Fprint(w, data.Time.Format(isiiTimeLayout))
+		fmt.Fprint(w, data.Time.Format(economicTimeLayout))
 		for _, section := range sections {
 			fmt.Fprintf(w, ";%s", section.Data[i].Value)
 		}
@@ -234,6 +268,39 @@ func (sections Sections) Average(interval int) error {
 		if err := section.Average(interval); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (sections Sections) parseEconomicData(scanner *bufio.Scanner) error {
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) <= len(economicTimeLayout)+1 {
+			return errInvalidSectionData
+		}
+		timeStr := line[:len(economicTimeLayout)]
+		data := line[len(economicTimeLayout)+1:]
+		row := strings.Split(data, economicSep)
+		if len(row) != len(sections) {
+			return errInvalidSectionData
+		}
+		t, err := time.Parse(economicTimeLayout, timeStr)
+		if err != nil {
+			return errInvalidTime
+		}
+		for i, section := range sections {
+			section.Data = append(section.Data, TimeValue{
+				Time:  t,
+				Value: row[i],
+			})
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("Invalid File: %s", err)
+	}
+	// Legacy Sample Count...
+	for _, section := range sections {
+		section.SampleCount = len(section.Data)
 	}
 	return nil
 }
