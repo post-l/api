@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags always come first -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>Isii Merge File</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
+    <style>
+    body {
+      padding-top: 40px;
+      padding-bottom: 40px;
+      background-color: #eee;
+    }
+
+    .form-hn {
+      max-width: 330px;
+      padding: 15px;
+      margin: 0 auto;
+    }
+    .form-hn .form-hn-heading {
+      margin-bottom: 10px;
+    }
+    .form-hn .form-control {
+      position: relative;
+      height: auto;
+      -webkit-box-sizing: border-box;
+              box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .form-hn .form-control:focus {
+      z-index: 2;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <form class="form-hn" action="http://ludovicpost.me:3000/hn/average" method="post" enctype="multipart/form-data">
+        <h2 class="form-hn-heading">Average Isii File</h2>
+        <fieldset class="form-group">
+          <label for="interval">Interval</label>
+          <input type="number" class="form-control" id="interval" name="interval" placeholder="Enter interval">
+        </fieldset>
+        <fieldset class="form-group">
+          <label for="file">File input</label>
+          <input type="file" class="form-control-file" id="file" name="file">
+        </fieldset>
+        <fieldset class="form-group">
+          <label for="fromIsii">Import File Format</label>
+          <select class="form-control" id="fromIsii" name="fromIsii">
+            <option value="1">isii</option>
+            <option value="0">economic</option>
+          </select>
+        </fieldset>
+        <fieldset class="form-group">
+          <label for="fromIsii">Export File Format</label>
+          <select class="form-control" id="toIsii" name="toIsii">
+            <option value="0">economic</option>
+            <option value="1">isii</option>
+          </select>
+        </fieldset>
+        <button type="submit" class="btn btn-lg btn-primary btn-block">Submit</button>
+      </form>
+    </div><!-- /.container -->
+
+    <!-- jQuery first, then Bootstrap JS. -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/js/bootstrap.min.js" integrity="sha384-vZ2WRJMwsjRMW/8U7i6PWi6AlO1L79snBrmgiDpgIWJ82z8eA5lenwvxbMV1PAh7" crossorigin="anonymous"></script>
+  </body>
+</html>

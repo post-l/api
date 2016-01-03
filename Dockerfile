@@ -1,5 +1,5 @@
 FROM golang:1.5.1
-MAINTAINER Ludovic Post <ludovic.post@etixgroup.com>
+MAINTAINER Ludovic Post <ludovic.post@epitech.eu>
 
 EXPOSE 3000
 
