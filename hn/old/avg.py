@@ -36,9 +36,6 @@ class AverageModificator(QtGui.QMainWindow):
         self.setWindowTitle('Average Modificator')
         self.show()
 
-        self.inputFile = '/home/post-l/Downloads/OTTO.TXT'
-        self.outputFile = '/home/post-l/Downloads/test.txt'
-
     def inputSelectFile(self):
         self.inputFile = QtGui.QFileDialog.getOpenFileName(self, 'Open file', selectedFilter='*.txt')
 
