@@ -15,10 +15,12 @@ const (
 	prefixGroup       = "Group      : "
 	prefixSampleCount = "SampleCount: "
 
-	timeLayout         = "02-01-2006 15:04:05"
-	economicTimeLayout = "2006-01-02;15:04"
+	isiiTimeLayout          = "02-01-2006 15:04:05"
+	economicTimeLayout      = "2006-01-02;15:04"
+	economicCommaTimeLayout = "2006-01-02,15:04"
 
-	economicSep = ";"
+	economicDefaultSep = ';'
+	economicCommaSep   = ','
 )
 
 var (
@@ -58,14 +60,22 @@ func ParseEconomicFile(reader io.Reader) (Sections, error) {
 		}
 	}
 	var sections Sections
+	sep := economicDefaultSep
 	for scanner.Scan() {
 		if len(scanner.Bytes()) == 0 {
 			break
 		}
 		line := scanner.Text()
-		row := strings.Split(line, economicSep)
+		row := strings.Split(line, string(sep))
 		if len(row) != 3 {
-			return nil, errInvalidSectionHeader
+			if sep == economicCommaSep {
+				return nil, errInvalidSectionHeader
+			}
+			sep = economicCommaSep
+			row = strings.Split(line, string(sep))
+			if len(row) != 3 {
+				return nil, errInvalidSectionHeader
+			}
 		}
 		sections = append(sections, &Section{
 			Setting: row[2],
@@ -75,7 +85,7 @@ func ParseEconomicFile(reader io.Reader) (Sections, error) {
 	if len(sections) == 0 {
 		return nil, errNoContent
 	}
-	err := sections.parseEconomicData(scanner)
+	err := sections.parseEconomicData(scanner, sep)
 	return sections, err
 }
 
@@ -120,7 +130,7 @@ func newIsiiSection(scanner *bufio.Scanner, lineIndex *int) (*Section, int, erro
 		if spaceIndex == -1 {
 			return nil, sectionIndex, errInvalidTimeValue
 		}
-		t, err := time.Parse(timeLayout, line[:spaceIndex])
+		t, err := time.Parse(isiiTimeLayout, line[:spaceIndex])
 		if err != nil {
 			return nil, sectionIndex, errInvalidTime
 		}
@@ -272,7 +282,11 @@ func (sections Sections) Average(interval int) error {
 	return nil
 }
 
-func (sections Sections) parseEconomicData(scanner *bufio.Scanner) error {
+func (sections Sections) parseEconomicData(scanner *bufio.Scanner, sep rune) error {
+	timeLayout := economicTimeLayout
+	if sep == economicCommaSep {
+		timeLayout = economicCommaTimeLayout
+	}
 	for scanner.Scan() {
 		line := scanner.Text()
 		if len(line) <= len(economicTimeLayout)+1 {
@@ -280,11 +294,11 @@ func (sections Sections) parseEconomicData(scanner *bufio.Scanner) error {
 		}
 		timeStr := line[:len(economicTimeLayout)]
 		data := line[len(economicTimeLayout)+1:]
-		row := strings.Split(data, economicSep)
+		row := strings.Split(data, string(sep))
 		if len(row) != len(sections) {
 			return errInvalidSectionData
 		}
-		t, err := time.Parse(economicTimeLayout, timeStr)
+		t, err := time.Parse(timeLayout, timeStr)
 		if err != nil {
 			return errInvalidTime
 		}

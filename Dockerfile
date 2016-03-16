@@ -1,4 +1,4 @@
-FROM golang:1.5.1
+FROM golang:1.6.0-alpine
 MAINTAINER Ludovic Post <ludovic.post@epitech.eu>
 
 EXPOSE 3000
