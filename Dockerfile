@@ -3,6 +3,8 @@ MAINTAINER Ludovic Post <ludovic.post@epitech.eu>
 
 EXPOSE 3000
 
+RUN apk add --no-cache git
+
 COPY . src/github.com/post-l/api
 
 RUN go get github.com/post-l/api
